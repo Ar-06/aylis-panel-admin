@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarSync, FolderTree, Package } from "lucide-react";
 
 export default function Dashboard() {
-  // Estos datos luego vendrán de tu API (useEffect + fetch)
   const stats = [
     {
       title: "Total Productos",
