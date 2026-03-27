@@ -8,7 +8,8 @@ import {
   PackageSearch,
   PlusCircle,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   Sidebar,
@@ -22,7 +23,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./ui/sidebar";
-import { toast } from "sonner";
 
 const menuGroups = [
   {
@@ -49,7 +49,8 @@ const menuGroups = [
   },
 ];
 
-export const AppSidebar = () => { 
+export const AppSidebar = () => {
+  const location = useLocation();
   const { logout } = useAuth();
 
   const handleLogout = async () => {
@@ -84,19 +85,27 @@ export const AppSidebar = () => {
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <Link to={item.url} className="w-full">
-                      <SidebarMenuButton
-                        tooltip={item.title}
-                        className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 active:scale-95"
-                      >
-                        <item.icon className="size-4 text-primary" />
-                        <span className="font-medium">{item.title}</span>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                ))}
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <Link to={item.url} className="w-full">
+                        <SidebarMenuButton
+                          tooltip={item.title}
+                          isActive={isActive}
+                          className={
+                            isActive
+                              ? "bg-primary/10 text-primary hover:bg-primary/20"
+                              : "hover:bg-muted"
+                          }
+                        >
+                          <item.icon className="size-4 text-primary" />
+                          <span className="font-medium">{item.title}</span>
+                        </SidebarMenuButton>
+                      </Link>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
