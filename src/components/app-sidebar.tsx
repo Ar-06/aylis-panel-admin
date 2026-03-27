@@ -1,4 +1,5 @@
 import profile from "@/assets/profile.png";
+import useAuth from "@/context/useAuth";
 import {
   FolderPlus,
   FolderTree,
@@ -21,6 +22,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./ui/sidebar";
+import { toast } from "sonner";
 
 const menuGroups = [
   {
@@ -47,7 +49,14 @@ const menuGroups = [
   },
 ];
 
-export const AppSidebar = () => {
+export const AppSidebar = () => { 
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success("Sesión cerrada");
+  };
+
   return (
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader>
@@ -97,7 +106,10 @@ export const AppSidebar = () => {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton className="text-primary hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+            <SidebarMenuButton
+              className="text-primary hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+              onClick={handleLogout}
+            >
               <LogOut className="size-4" />
               <span className="group-data-[collapsible=icon]:hidden">
                 Cerrar Sesión
