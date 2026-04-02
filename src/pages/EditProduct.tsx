@@ -19,12 +19,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useCategories } from "@/hooks/useCategory";
-import type { ProductFormValues } from "@/schemas/product.schema";
-import productSchema from "@/schemas/product.schema";
+import {
+  updateProductSchema,
+  type UpdateProductFormValues,
+} from "@/schemas/product.schema";
+import type { ProductImage } from "@/types/products.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isAxiosError } from "axios";
 import {
-  Check,
   ImageIcon,
   Loader2,
   PackageCheck,
@@ -33,16 +35,21 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
-export default function AddProduct() {
+export default function EditProduct() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { categories } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [previews, setPreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
 
   const {
     register,
@@ -51,8 +58,9 @@ export default function AddProduct() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    reset,
+  } = useForm<UpdateProductFormValues>({
+    resolver: zodResolver(updateProductSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -80,8 +88,9 @@ export default function AddProduct() {
 
     const newFiles = Array.from(files);
     const currentImages = watch("images") || [];
-    if (currentImages.length + newFiles.length > 4) {
-      toast.error("!Máximo de 4 imágenes permitidas");
+
+    if (existingImages.length + currentImages.length + newFiles.length > 4) {
+      toast.error("¡Máximo de 4 imágenes permitidas en total!");
       return;
     }
 
@@ -106,16 +115,99 @@ export default function AddProduct() {
     setValue("images", updatedImages, { shouldValidate: true });
   };
 
-  const onSubmit = async (data: ProductFormValues) => {
+  const handleRemoveExistingImage = async (img: ProductImage) => {
+    try {
+      setDeletingImageId(img.id);
+      await apiProduct.deleteImage(id!, img.publicId);
+      setExistingImages((prev) => prev.filter((i) => i.id !== img.id));
+      toast.success("¡Imagen eliminada con éxito!");
+    } catch (error) {
+      console.error("Error original:", error);
+
+      if (isAxiosError(error) && error.response) {
+        const data = error.response.data;
+
+        if (data.errors && Array.isArray(data.errors)) {
+          const messages = data.errors.map(
+            (err: string | { message: string }) =>
+              typeof err === "string" ? err : err.message,
+          );
+
+          toast.error("Revisa los campos", {
+            description: messages.join(" | "),
+          });
+          return;
+        }
+
+        if (data.message) {
+          toast.error("Error del servidor", {
+            description: data.message,
+          });
+          return;
+        }
+      }
+
+      toast.error("¡Ups!", {
+        description: "No pudimos conectar con el servidor. Revisa tu internet.",
+      });
+    } finally {
+      setDeletingImageId(null);
+    }
+  };
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await apiProduct.getProduct(id!);
+        const product = response.data;
+
+        reset({
+          title: product.title || "",
+          description: product.description,
+          price: Number(product.price),
+          categoryId: product.category.id,
+          isAvailable: product.isAvailable,
+          specs: product.specs
+            ? Object.entries(product.specs).map(([key, value]) => ({
+                key,
+                value: String(value),
+              }))
+            : [{ key: "", value: "" }],
+          images: [],
+        });
+
+        setExistingImages(product.images || []);
+      } catch (error) {
+        toast.error("¡Ups! No pudimos cargar el producto.");
+        console.error(error);
+        navigate("/admin/products");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) fetchProduct();
+  }, [id, reset, navigate]);
+
+  const onSubmit = async (data: UpdateProductFormValues) => {
+    if (
+      existingImages.length === 0 &&
+      (!data.images || data.images.length === 0)
+    ) {
+      toast.error("¡El producto no puede quedarse sin fotos!", {
+        description: "Sube al menos una imagen antes de guardar.",
+      });
+      return;
+    }
     try {
       setIsSubmitting(true);
-
       const formData = new FormData();
-      formData.append("title", data.title);
-      formData.append("description", data.description);
-      formData.append("price", data.price.toString());
-      formData.append("categoryId", data.categoryId);
-      formData.append("isAvailable", data.isAvailable.toString());
+
+      formData.append("title", data.title || "");
+      formData.append("description", data.description || "");
+      formData.append("price", data.price?.toString() || "");
+      formData.append("categoryId", data.categoryId || "");
+      formData.append("isAvailable", data.isAvailable?.toString() || "");
 
       const formatedSpecs = data.specs?.reduce(
         (acc, curr) => {
@@ -128,22 +220,17 @@ export default function AddProduct() {
       );
 
       formData.append("specs", JSON.stringify(formatedSpecs));
+
       if (data.images && data.images.length > 0) {
         data.images.forEach((file: File) => {
           formData.append("images", file);
         });
       }
 
-      await apiProduct.createProduct(formData);
-
-      console.log("Formdata enviado correctmanete", formData);
-
-      toast.success("!Producto creado con éxito!", {
-        icon: <Check className="w-4 h-4" />,
-        description: "El catálogo de Aylis Scrap ha sido actualizado",
-      });
+      await apiProduct.updateProduc(id!, formData);
+      toast.success("¡Producto actualizado con éxito!");
       navigate("/admin/products");
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error original:", error);
 
       if (isAxiosError(error) && error.response) {
@@ -177,11 +264,21 @@ export default function AddProduct() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="animate-pulse text-muted-foreground">
+          Cargando producto...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <main className="space-y-6 md:p-8 bg-background flex-1">
       <div className="flex items-center justify-between gap-4 border-b pb-5">
         <h2 className="text-3xl font-bold tracking-tight text-foreground">
-          Añadir Nuevo Producto
+          Editar Producto
         </h2>
       </div>
 
@@ -369,7 +466,38 @@ export default function AddProduct() {
                   className="hidden"
                   onChange={handleImageChange}
                 />
+
                 <div className="grid grid-cols-2 gap-4">
+                  {existingImages.map((img, index) => (
+                    <div
+                      key={img.url}
+                      className="relative aspect-square rounded-xl overflow-hidden border border-border group"
+                    >
+                      <img
+                        src={img.url}
+                        alt={`Existente ${index}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingImage(img)}
+                        disabled={deletingImageId === img.id}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg disabled:opacity-100 disabled:bg-red-400 disabled:cursor-not-allowed"
+                      >
+                        {deletingImageId === img.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <X className="w-3 h-3" />
+                        )}
+                      </button>
+                      {index === 0 && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-[10px] text-white text-center py-1 font-bold">
+                          EXISTENTE - PRINCIPAL
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
                   {previews.map((url, index) => (
                     <div
                       key={url}
@@ -377,8 +505,8 @@ export default function AddProduct() {
                     >
                       <img
                         src={url}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
+                        alt={`Preview ${index}`}
+                        className="w-full h-full object-cover opacity-90"
                       />
                       <button
                         type="button"
@@ -387,15 +515,13 @@ export default function AddProduct() {
                       >
                         <X className="w-3 h-3" />
                       </button>
-                      {index === 0 && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-primary/10 text-[10px] text-white text-center py-1 font-bold">
-                          PRINCIPAL
-                        </div>
-                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-blue-500/80 text-[10px] text-white text-center py-1 font-bold">
+                        NUEVA
+                      </div>
                     </div>
                   ))}
 
-                  {previews.length < 4 && (
+                  {existingImages.length + previews.length < 4 && (
                     <Label
                       htmlFor="image-upload"
                       className="relative aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center bg-muted/20 hover:border-primary hover:bg-muted/40 transition-all cursor-pointer group"
@@ -466,7 +592,7 @@ export default function AddProduct() {
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                "Crear y Guardar Producto"
+                "Actualizar Producto"
               )}
             </Button>
           </CardContent>

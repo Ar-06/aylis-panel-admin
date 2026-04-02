@@ -9,6 +9,7 @@ import Login from "@/pages/Login";
 import Products from "@/pages/Products";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
+import EditProduct from "@/pages/EditProduct";
 
 function AppRoutes() {
   return (
@@ -23,6 +24,7 @@ function AppRoutes() {
                 <Route path="categories" element={<Categories />} />
                 <Route path="products" element={<Products />} />
                 <Route path="products/new" element={<AddProduct />} />
+                <Route path="products/:id" element={<EditProduct />} />
                 <Route path="categories/new" element={<AddCategory />} />
               </Route>
             </Route>
