@@ -45,7 +45,7 @@ export default function EditProduct() {
   const navigate = useNavigate();
   const { categories } = useCategories();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [previews, setPreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
@@ -267,9 +267,8 @@ export default function EditProduct() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <span className="animate-pulse text-muted-foreground">
-          Cargando producto...
-        </span>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Cargando producto...</span>
       </div>
     );
   }

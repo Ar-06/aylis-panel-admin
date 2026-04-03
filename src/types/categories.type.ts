@@ -12,3 +12,8 @@ export interface CategoryResponse {
   message: string;
   data: Category[];
 }
+
+export interface SingleCategoryResponse {
+  message: string;
+  data: Category;
+}

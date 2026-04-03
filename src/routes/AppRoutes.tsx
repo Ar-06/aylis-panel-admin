@@ -1,15 +1,16 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AuthProvider from "@/context/authProvider";
 import AdminLayout from "@/layout/AdminLayout";
-import AddCategory from "@/pages/AddCategory";
-import AddProduct from "@/pages/AddProduct";
-import Categories from "@/pages/Categories";
+import AddCategory from "@/pages/categories/AddCategory";
+import Categories from "@/pages/categories/Categories";
+import EditCategory from "@/pages/categories/EditCategory";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
-import Products from "@/pages/Products";
+import AddProduct from "@/pages/products/AddProduct";
+import EditProduct from "@/pages/products/EditProduct";
+import Products from "@/pages/products/Products";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
-import EditProduct from "@/pages/EditProduct";
 
 function AppRoutes() {
   return (
@@ -26,6 +27,7 @@ function AppRoutes() {
                 <Route path="products/new" element={<AddProduct />} />
                 <Route path="products/:id" element={<EditProduct />} />
                 <Route path="categories/new" element={<AddCategory />} />
+                <Route path="categories/:id" element={<EditCategory />} />
               </Route>
             </Route>
           </Routes>
