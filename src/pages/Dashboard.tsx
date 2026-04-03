@@ -11,56 +11,80 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { CalendarSync, FolderTree, Package } from "lucide-react";
+import { useStats } from "@/hooks/useStats";
+import { formatDate } from "@/lib/format-date";
+import { CalendarSync, FolderTree, Loader2, Package } from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
 
 export default function Dashboard() {
-  const chartData = [
-    { category: "álbumes", stock: 35, fill: "var(--chart-1)" },
-    { category: "agendas", stock: 25, fill: "var(--chart-2)" },
-    { category: "libretas", stock: 20, fill: "var(--chart-3)" },
-    { category: "cajas", stock: 15, fill: "var(--chart-4)" },
-    { category: "otros", stock: 5, fill: "var(--chart-5)" },
-  ];
+  const { stats, loading, error } = useStats();
 
-  const chartConfig = {
-    stock: { label: "Stock", color: "var(--primary)" },
-    álbumes: { label: "Álbumes", color: "var(--chart-1)" },
-    agendas: { label: "Agendas", color: "var(--chart-2)" },
-    libretas: { label: "Libretas", color: "var(--chart-3)" },
-    cajas: { label: "Cajas", color: "var(--chart-4)" },
-    otros: { label: "Otros", color: "var(--chart-5)" },
-  } satisfies ChartConfig;
+  const dynamicChartData = stats.chartData?.map((item, index) => ({
+    category: item.category,
+    stock: item.stock,
+    fill: `var(--chart-${(index % 5) + 1})`,
+  }));
 
-  const stats = [
+  const dynamicChartConfig = {
+    stock: { label: "Productos", color: "var(--primary)" },
+  } as ChartConfig;
+
+  stats.chartData?.forEach((item, index) => {
+    dynamicChartConfig[item.category] = {
+      label: item.category,
+      color: `var(--chart-${(index % 5) + 1})`,
+    };
+  });
+
+  const statsData = [
     {
       title: "Total Productos",
-      value: "124",
+      value: stats.totalProducts,
       description: "Productos activos en la web",
       icon: Package,
       color: "bg-primary/10 text-primary",
     },
     {
       title: "Categorías",
-      value: "12",
+      value: stats.totalCategories,
       description: "Secciones organizadas",
       icon: FolderTree,
       color: "bg-blue-500/10 text-blue-500",
     },
     {
       title: "Última Edición",
-      value: "Hace 2 horas",
-      description: "Álbum de fotos vintage",
+      value: formatDate(stats.latestUpdate || ""),
+      description:
+        stats.latestItemName && stats.latestUpdate
+          ? `${stats.latestItemType}: ${stats.latestItemName}`
+          : "No hay modificaciones",
       icon: CalendarSync,
       color: "bg-orange-500/10 text-orange-500",
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2">Cargando métricas...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-destructive">
+        <p>¡Ups! Ocurrió un error: {error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">Hola, Lía 👋</h2>
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
+        {statsData.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -71,8 +95,12 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">
+              <div
+                className={`font-bold ${typeof stat.value === "string" && stat.value.length > 5 ? "text-xl" : "text-2xl"}`}
+              >
+                {stat.value}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
                 {stat.description}
               </p>
             </CardContent>
@@ -91,7 +119,7 @@ export default function Dashboard() {
 
           <CardContent className="flex-1 pb-0">
             <ChartContainer
-              config={chartConfig}
+              config={dynamicChartConfig}
               className="mx-auto aspect-square max-h-87.5"
             >
               <PieChart>
@@ -100,7 +128,7 @@ export default function Dashboard() {
                   content={<ChartTooltipContent hideLabel />}
                 />
                 <Pie
-                  data={chartData}
+                  data={dynamicChartData}
                   dataKey="stock"
                   nameKey="category"
                   innerRadius={80}
@@ -121,7 +149,7 @@ export default function Dashboard() {
                               y={viewBox.cy}
                               className="fill-foreground text-4xl font-bold"
                             >
-                              124
+                              {stats.totalProducts}
                             </tspan>
                             <tspan
                               x={viewBox.cx}
@@ -141,19 +169,28 @@ export default function Dashboard() {
           </CardContent>
 
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 px-6 pb-6 pt-6 border-t border-border/50 mt-4 bg-muted/10">
-            {chartData.map((data) => {
-              const categoryKey = data.category as keyof typeof chartConfig;
+            {dynamicChartData?.map((data) => {
+              const config = dynamicChartConfig[data.category];
+              if (!config) return null;
+
+              const percentage =
+                stats.totalProducts > 0
+                  ? Math.round((data.stock / stats.totalProducts) * 100)
+                  : 0;
+
               return (
                 <div key={data.category} className="flex items-center gap-2">
                   <div
                     className="size-3 rounded-full"
-                    style={{ backgroundColor: chartConfig[categoryKey].color }}
+                    style={{
+                      backgroundColor: config.color,
+                    }}
                   />
                   <span className="text-base font-medium text-foreground capitalize">
-                    {chartConfig[categoryKey].label}
+                    {config.label}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    ({data.stock}%)
+                    ({data.stock} prods - {percentage}%)
                   </span>
                 </div>
               );
