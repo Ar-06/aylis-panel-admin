@@ -190,6 +190,7 @@ export default function EditProduct() {
   }, [id, reset, navigate]);
 
   const onSubmit = async (data: UpdateProductFormValues) => {
+    console.log("Datos capturados por el form:", data);
     if (
       existingImages.length === 0 &&
       (!data.images || data.images.length === 0)
@@ -207,7 +208,10 @@ export default function EditProduct() {
       formData.append("description", data.description || "");
       formData.append("price", data.price?.toString() || "");
       formData.append("categoryId", data.categoryId || "");
-      formData.append("isAvailable", data.isAvailable?.toString() || "");
+      formData.append(
+        "isAvailable",
+        data.isAvailable === false ? "false" : "true",
+      );
 
       const formatedSpecs = data.specs?.reduce(
         (acc, curr) => {
