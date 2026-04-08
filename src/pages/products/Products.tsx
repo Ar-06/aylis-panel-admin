@@ -196,7 +196,7 @@ export default function Products() {
                               <span className="font-semibold text-foreground leading-none mb-1">
                                 {p.title}
                               </span>
-                              <span className="text-xs text-muted-foreground truncate max-w-45 sm:max-w-75">
+                              <span className="text-xs text-muted-foreground line-clamp-2 max-w-[200px] sm:max-w-[300px] whitespace-normal mt-1">
                                 {p.description}
                               </span>
                             </div>

@@ -36,6 +36,5 @@ export function useStats() {
     stats,
     loading,
     error,
-    refetch: fetchStats,
   };
 }

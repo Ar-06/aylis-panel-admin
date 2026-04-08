@@ -150,7 +150,8 @@ export default function AddCategory() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="label" className="text-sm font-semibold">
-                      Etiqueta Pública (Label)
+                      Etiqueta Pública (Label){" "}
+                      <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       {...register("label")}
@@ -167,7 +168,9 @@ export default function AddCategory() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Descripción</Label>
+                  <Label htmlFor="description">
+                    Descripción <span className="text-destructive">*</span>
+                  </Label>
                   <Textarea
                     {...register("description")}
                     id="description"
@@ -189,7 +192,7 @@ export default function AddCategory() {
               <CardHeader className="bg-muted/30 border-b pb-4">
                 <CardTitle className="text-xl flex items-center gap-2">
                   <ImageIcon className="w-5 h-5 text-primary" />
-                  Imagen Principal
+                  Imagen Principal <span className="text-destructive">*</span>
                 </CardTitle>
                 <CardDescription>
                   Sube una imagen representativa para la categoría.

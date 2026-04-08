@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
-import { Button, buttonVariants } from "./ui/button";
+import { buttonVariants } from "./ui/button";
 
 interface DeleteConfirmationDialogProps {
   idProduct: string;
@@ -49,17 +49,10 @@ export const DeleteConfirmationDialog = ({
         className={buttonVariants({
           variant: "ghost",
           size: "sm",
-          className:
-            "h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600",
+          className: "h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600",
         })}
       >
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0 hover:text-red-600"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <Trash2 className="w-4 h-4" />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -71,7 +64,10 @@ export const DeleteConfirmationDialog = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction className="bg-red-500" onClick={handleDelete}>
+          <AlertDialogAction
+            className="bg-red-500 hover:bg-red-600"
+            onClick={handleDelete}
+          >
             {isDeleting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
