@@ -11,13 +11,23 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { Switch } from "@/components/ui/switch";
+import { useSetting } from "@/hooks/useSetting";
 import { useStats } from "@/hooks/useStats";
 import { formatDate } from "@/lib/format-date";
-import { CalendarSync, FolderTree, Loader2, Package } from "lucide-react";
+import {
+  AlertCircle,
+  CalendarSync,
+  FolderTree,
+  Loader2,
+  Package,
+  Store,
+} from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
 
 export default function Dashboard() {
   const { stats, loading, error } = useStats();
+  const { isOpen, isLoading, isToggling, toggleAgenda } = useSetting();
 
   const dynamicChartData = stats.chartData?.map((item, index) => ({
     category: item.category,
@@ -82,7 +92,53 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">Hola, Lía 👋</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
+        <h2 className="text-3xl font-bold tracking-tight">Hola, Lía 👋</h2>
+
+        <Card
+          className={`flex flex-row items-center justify-between gap-4 px-4 py-2 w-full sm:w-auto transition-all duration-300 shadow-sm border ${
+            isOpen
+              ? "bg-emerald-50/40 border-emerald-200"
+              : "bg-orange-50/40 border-orange-200"
+          }`}
+        >
+          <div className="flex flex-row items-center gap-3">
+            <div
+              className={`p-2 rounded-full transition-colors shrink-0 ${
+                isOpen
+                  ? "bg-emerald-100 text-emerald-600"
+                  : "bg-orange-100 text-orange-600"
+              }`}
+            >
+              {isOpen ? (
+                <Store className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-[130px]">
+              <p className="text-[13px] font-semibold text-gray-900 leading-none mb-1">
+                Estado de la Agenda
+              </p>
+              <p
+                className={`text-[10px] font-bold uppercase tracking-wider ${isOpen ? "text-emerald-600" : "text-orange-600"}`}
+              >
+                {isLoading ? "Cargando..." : isOpen ? "Abierta" : "Llena"}
+              </p>
+            </div>
+          </div>
+
+          <div className="pl-3 py-1 border-l border-foreground/10 flex items-center shrink-0">
+            <Switch
+              checked={isOpen}
+              onCheckedChange={toggleAgenda}
+              disabled={isLoading || isToggling}
+              className={isOpen ? "data-[state=checked]:bg-emerald-500" : ""}
+            />
+          </div>
+        </Card>
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
         {statsData.map((stat) => (
           <Card key={stat.title}>
